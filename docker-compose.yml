@@ -1,0 +1,39 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-aichatbot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-aichatbot}
+      LLM_URL: ${LLM_URL:-https://api.deepseek.com}
+      LLM_API_KEY: ${LLM_API_KEY}
+      LLM_MODEL: ${LLM_MODEL:-deepseek-chat}
+      PROMPT_FILE_PATH: /app/prompts/system.txt
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./prompts:/app/prompts:ro
+      - ./static:/app/static:ro
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aichatbot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-aichatbot}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aichatbot} -d ${POSTGRES_DB:-aichatbot}"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
