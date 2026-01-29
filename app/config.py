@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "deepseek-chat"
 
     PROMPT_FILE_PATH: str = "prompts/system.txt"
+    ADMIN_KEY: str = ""
 
     @property
     def database_url(self) -> str:

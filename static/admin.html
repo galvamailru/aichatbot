@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Админка — Сессии и лиды</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Inter", sans-serif; }
+    body { background: #f0f0f5; min-height: 100vh; padding: 20px; }
+    .admin { max-width: 900px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; }
+    .tabs { display: flex; border-bottom: 1px solid #e0e0e0; background: #fafafa; }
+    .tabs button { flex: 1; padding: 14px 20px; border: none; background: none; cursor: pointer; font-size: 1rem; font-weight: 600; color: #666; }
+    .tabs button.active { background: #fff; color: #5350C4; border-bottom: 2px solid #5350C4; margin-bottom: -1px; }
+    .tabs button:hover:not(.active) { background: #f0f0f5; }
+    .panel { display: none; padding: 20px; min-height: 300px; }
+    .panel.active { display: block; }
+    .auth { padding: 20px; border-bottom: 1px solid #e0e0e0; background: #fafafa; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .auth input { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; width: 220px; }
+    .auth button { padding: 8px 16px; background: #5350C4; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+    .auth button:hover { background: #3d39ac; }
+    .error { color: #c00; font-size: 0.9rem; margin-top: 4px; }
+    ul.sessions { list-style: none; }
+    ul.sessions li { padding: 12px 16px; border: 1px solid #e8e8e8; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    ul.sessions li:hover { background: #f5f5ff; border-color: #5350C4; }
+    ul.sessions li .meta { font-size: 0.85rem; color: #666; }
+    ul.leads { list-style: none; }
+    ul.leads li { padding: 12px 16px; border: 1px solid #e8e8e8; border-radius: 8px; margin-bottom: 8px; }
+    ul.leads li .contact { font-weight: 600; color: #333; }
+    ul.leads li .meta { font-size: 0.85rem; color: #666; margin-top: 4px; }
+    .detail { margin-top: 16px; padding: 16px; background: #f8f8fc; border-radius: 8px; max-height: 400px; overflow-y: auto; }
+    .detail h3 { margin-bottom: 12px; font-size: 1rem; color: #5350C4; }
+    .detail .msg { padding: 8px 12px; margin-bottom: 6px; border-radius: 8px; font-size: 0.9rem; }
+    .detail .msg.user { background: #5350C4; color: #fff; margin-left: 20px; }
+    .detail .msg.assistant { background: #e8e8f0; color: #333; margin-right: 20px; }
+    .detail .msg .time { font-size: 0.75rem; opacity: 0.8; margin-top: 4px; }
+    .back { margin-bottom: 12px; }
+    .back button { padding: 6px 12px; background: #e0e0e0; border: none; border-radius: 6px; cursor: pointer; }
+    .back button:hover { background: #ccc; }
+  </style>
+</head>
+<body>
+  <div class="admin">
+    <div class="auth">
+      <input type="password" id="adminKey" placeholder="Ключ админки (ADMIN_KEY)" />
+      <button type="button" id="authBtn">Войти</button>
+      <span id="authError" class="error"></span>
+    </div>
+    <div class="tabs">
+      <button type="button" data-tab="sessions" class="active">Сессии</button>
+      <button type="button" data-tab="leads">Лиды</button>
+    </div>
+    <div id="panel-sessions" class="panel active">
+      <div id="sessions-list">
+        <p style="color:#666;">Введите ключ админки (ADMIN_KEY из .env) выше и нажмите «Войти».</p>
+      </div>
+      <div id="session-detail" class="detail" style="display: none;">
+        <div class="back"><button type="button" id="backSessions">← К списку</button></div>
+        <h3 id="detail-title">История чата</h3>
+        <div id="session-messages"></div>
+      </div>
+    </div>
+    <div id="panel-leads" class="panel">
+      <div id="leads-list">
+        <p style="color:#666;">Перейдите на вкладку «Лиды» после входа.</p>
+      </div>
+    </div>
+  </div>
+  <script>
+    let adminKey = '';
+    const authBtn = document.getElementById('authBtn');
+    const adminKeyInput = document.getElementById('adminKey');
+    const authError = document.getElementById('authError');
+
+    function setActiveTab(name) {
+      document.querySelectorAll('.tabs button').forEach(b => { b.classList.toggle('active', b.dataset.tab === name); });
+      document.querySelectorAll('.panel').forEach(p => { p.classList.toggle('active', p.id === 'panel-' + name); });
+      if (name === 'sessions') loadSessions();
+      if (name === 'leads') loadLeads();
+    }
+
+    function headers() {
+      return { 'X-Admin-Key': adminKey };
+    }
+
+    async function loadSessions() {
+      const el = document.getElementById('sessions-list');
+      el.innerHTML = 'Загрузка…';
+      document.getElementById('session-detail').style.display = 'none';
+      try {
+        const r = await fetch('/api/admin/sessions', { headers: headers() });
+        if (r.status === 403) { el.innerHTML = '<p class="error">Неверный ключ. Введите ADMIN_KEY.</p>'; return; }
+        if (!r.ok) { el.innerHTML = '<p class="error">Ошибка загрузки</p>'; return; }
+        const sessions = await r.json();
+        if (sessions.length === 0) { el.innerHTML = '<p>Нет сессий</p>'; return; }
+        el.innerHTML = '<ul class="sessions">' + sessions.map(s =>
+          '<li data-user="' + s.user_id + '" data-dialog="' + s.dialog_id + '">' +
+          '<span>' + s.user_id + ' / ' + s.dialog_id + '</span>' +
+          '<span class="meta">' + (s.last_at ? new Date(s.last_at).toLocaleString() : '') + '</span></li>'
+        ).join('') + '</ul>';
+        el.querySelectorAll('li').forEach(li => {
+          li.addEventListener('click', () => openSession(li.dataset.user, li.dataset.dialog));
+        });
+      } catch (e) {
+        el.innerHTML = '<p class="error">' + e.message + '</p>';
+      }
+    }
+
+    async function openSession(userId, dialogId) {
+      document.getElementById('sessions-list').style.display = 'none';
+      const detail = document.getElementById('session-detail');
+      detail.style.display = 'block';
+      document.getElementById('detail-title').textContent = 'Сессия: ' + userId + ' / ' + dialogId;
+      const msgEl = document.getElementById('session-messages');
+      msgEl.innerHTML = 'Загрузка…';
+      try {
+        const r = await fetch('/api/admin/sessions/' + encodeURIComponent(userId) + '/' + encodeURIComponent(dialogId) + '/messages', { headers: headers() });
+        if (!r.ok) { msgEl.innerHTML = '<p class="error">Ошибка загрузки</p>'; return; }
+        const messages = await r.json();
+        msgEl.innerHTML = messages.map(m =>
+          '<div class="msg ' + m.role + '">' + escapeHtml(m.content) + '<div class="time">' + (m.created_at ? new Date(m.created_at).toLocaleString() : '') + '</div></div>'
+        ).join('');
+      } catch (e) {
+        msgEl.innerHTML = '<p class="error">' + e.message + '</p>';
+      }
+    }
+
+    function escapeHtml(s) {
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    document.getElementById('backSessions').addEventListener('click', () => {
+      document.getElementById('session-detail').style.display = 'none';
+      document.getElementById('sessions-list').style.display = 'block';
+      loadSessions();
+    });
+
+    async function loadLeads() {
+      const el = document.getElementById('leads-list');
+      el.innerHTML = 'Загрузка…';
+      try {
+        const r = await fetch('/api/admin/leads', { headers: headers() });
+        if (r.status === 403) { el.innerHTML = '<p class="error">Неверный ключ.</p>'; return; }
+        if (!r.ok) { el.innerHTML = '<p class="error">Ошибка загрузки</p>'; return; }
+        const leads = await r.json();
+        if (leads.length === 0) { el.innerHTML = '<p>Нет лидов</p>'; return; }
+        el.innerHTML = '<ul class="leads">' + leads.map(l =>
+          '<li><div class="contact">' + escapeHtml(l.contact_text) + '</div>' +
+          '<div class="meta">user: ' + l.user_id + ' · dialog: ' + l.dialog_id + ' · ' + (l.created_at ? new Date(l.created_at).toLocaleString() : '') + '</div></li>'
+        ).join('') + '</ul>';
+      } catch (e) {
+        el.innerHTML = '<p class="error">' + e.message + '</p>';
+      }
+    }
+
+    document.querySelectorAll('.tabs button').forEach(b => {
+      b.addEventListener('click', () => setActiveTab(b.dataset.tab));
+    });
+
+    authBtn.addEventListener('click', () => {
+      adminKey = adminKeyInput.value.trim();
+      authError.textContent = '';
+      if (!adminKey) { authError.textContent = 'Введите ключ'; return; }
+      setActiveTab('sessions');
+    });
+  </script>
+</body>
+</html>

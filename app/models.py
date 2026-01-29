@@ -30,3 +30,22 @@ class Message(Base):
         server_default=func.now(),
         nullable=False,
     )
+
+
+class Lead(Base):
+    """Лиды: контакты для обратной связи, извлечённые из диалогов."""
+    __tablename__ = "leads"
+
+    id: Mapped[uuid4] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+    )
+    user_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    dialog_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    contact_text: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )

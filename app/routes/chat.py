@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.database import get_db
+from app.leads import save_lead_if_contact
 from app.llm import load_system_prompt, stream_chat
 from app.models import Message
 from app.schemas import ChatRequest
@@ -62,6 +63,7 @@ async def chat(
     )
     db.add(user_msg)
     await db.flush()
+    await save_lead_if_contact(db, body.user_id, body.dialog_id, body.message)
 
     async def stream_and_save() -> AsyncIterator[bytes]:
         full_reply: list[str] = []
