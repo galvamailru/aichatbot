@@ -24,19 +24,41 @@
   const sessionId = getOrCreateSessionId();
   const userId = 'user-' + sessionId.slice(0, 8);
 
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function formatBold(text) {
+    if (!text) return '';
+    var escaped = escapeHtml(text);
+    return escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  }
+
   function createMessageElement(content, role) {
     const div = document.createElement('div');
     div.className = 'message ' + (role === 'user' ? 'user-message' : 'bot-message');
     const text = document.createElement('div');
     text.className = 'message-text';
-    text.textContent = content;
+    if (role === 'bot') {
+      text.innerHTML = formatBold(content);
+    } else {
+      text.textContent = content;
+    }
     div.appendChild(text);
     return { wrap: div, text };
   }
 
-  function appendStreamChunk(element, chunk) {
+  function appendStreamChunk(element, chunk, formattedSetter) {
     if (chunk == null || chunk === '') return;
-    element.textContent = (element.textContent || '') + chunk;
+    if (formattedSetter) {
+      formattedSetter(chunk);
+    } else {
+      element.textContent = (element.textContent || '') + chunk;
+    }
   }
 
   async function handleSend(e) {
@@ -81,6 +103,12 @@
         return;
       }
 
+      var streamedText = '';
+      function appendAndFormat(chunk) {
+        streamedText += chunk;
+        botEl.text.innerHTML = formatBold(streamedText);
+      }
+
       const reader = res.body.getReader();
       const dec = new TextDecoder();
       let buffer = '';
@@ -94,7 +122,7 @@
           if (line.startsWith('data: ')) {
             var data = line.slice(6).replace(/\r?\n$/, '');
             if (data.trim() === '[DONE]') continue;
-            appendStreamChunk(botEl.text, data);
+            appendAndFormat(data);
             chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
           }
         }

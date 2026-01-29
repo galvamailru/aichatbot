@@ -137,6 +137,10 @@ body.show-chatbot .chatbot-popup {
   word-break: break-word;
 }
 
+.chat-body .message .message-text strong {
+  font-weight: 700;
+}
+
 .chat-body .bot-message .message-text {
   background: #F2F2FF;
   border-radius: 13px 13px 13px 3px;
