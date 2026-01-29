@@ -34,23 +34,9 @@
     return { wrap: div, text };
   }
 
-  function isWordChar(c) {
-    if (!c) return false;
-    var code = c.charCodeAt(0);
-    return (code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || (code >= 0x0400 && code <= 0x04FF) || c === '_';
-  }
-
   function appendStreamChunk(element, chunk) {
-    var text = element.textContent || '';
-    if (chunk === '') return;
-    if (text.length > 0) {
-      var lastChar = text[text.length - 1];
-      var firstChar = chunk.charAt(0);
-      if (isWordChar(lastChar) && isWordChar(firstChar)) {
-        chunk = ' ' + chunk;
-      }
-    }
-    element.textContent = text + chunk;
+    if (chunk == null || chunk === '') return;
+    element.textContent = (element.textContent || '') + chunk;
   }
 
   async function handleSend(e) {
