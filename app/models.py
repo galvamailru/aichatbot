@@ -4,7 +4,7 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import DateTime, String, Text, func
+from sqlalchemy import DateTime, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -33,8 +33,9 @@ class Message(Base):
 
 
 class Lead(Base):
-    """Лиды: контакты для обратной связи, извлечённые из диалогов."""
+    """Лиды: контакты для обратной связи, извлечённые из диалогов. Один лид на сессию (user_id, dialog_id), обновляется при новом контакте."""
     __tablename__ = "leads"
+    __table_args__ = (UniqueConstraint("user_id", "dialog_id", name="uq_leads_user_dialog"),)
 
     id: Mapped[uuid4] = mapped_column(
         UUID(as_uuid=True),
@@ -47,5 +48,11 @@ class Lead(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
         nullable=False,
     )

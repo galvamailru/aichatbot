@@ -88,6 +88,21 @@ body.show-chatbot .chatbot-popup {
   align-items: center;
 }
 
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chat-header .layout-switch {
+  color: rgba(255,255,255,0.9);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+.chat-header .layout-switch:hover {
+  text-decoration: underline;
+}
+
 .header-info .logo-text {
   color: #fff;
   font-weight: 600;
@@ -254,6 +269,38 @@ body.show-chatbot .chatbot-popup {
   color: #c00;
   font-size: 0.85rem;
   margin-top: 6px;
+}
+
+/* Режим полноэкранного фрейма (?layout=full) */
+body.layout-full #chatbot-toggler {
+  display: none;
+}
+
+body.layout-full .chatbot-popup {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  top: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  border-radius: 0;
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+  box-shadow: none;
+}
+
+body.layout-full .chat-body {
+  height: calc(100vh - 180px);
+}
+
+body.layout-full #close-chatbot {
+  display: none;
+}
+
+body.layout-full .layout-switch {
+  margin-right: 8px;
 }
 
 @media (max-width: 520px) {

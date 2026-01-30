@@ -24,6 +24,25 @@
   const sessionId = getOrCreateSessionId();
   const userId = 'user-' + sessionId.slice(0, 8);
 
+  var isFullLayout = (function () {
+    var params = new URLSearchParams(window.location.search);
+    var full = params.get('layout') === 'full';
+    if (full) {
+      document.body.classList.add('layout-full', 'show-chatbot');
+    }
+    return full;
+  })();
+
+  var layoutSwitch = document.getElementById('layout-switch');
+  if (layoutSwitch) {
+    layoutSwitch.textContent = isFullLayout ? 'Всплывающее окно' : 'Полноэкранный';
+    layoutSwitch.href = isFullLayout ? (window.location.pathname || '/static/index.html') : (window.location.pathname + '?layout=full');
+    layoutSwitch.addEventListener('click', function (e) {
+      e.preventDefault();
+      window.location.href = layoutSwitch.href;
+    });
+  }
+
   function escapeHtml(s) {
     return String(s)
       .replace(/&/g, '&amp;')

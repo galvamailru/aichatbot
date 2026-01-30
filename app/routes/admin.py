@@ -1,9 +1,9 @@
 """
-Админ API: список сессий, история чата по сессии, список лидов.
+Админ API: список сессий, история чата по сессии, список лидов, агрегация по дате.
 Доступ по заголовку X-Admin-Key (значение из .env ADMIN_KEY).
 """
 from fastapi import APIRouter, Depends, Header, HTTPException
-from sqlalchemy import select, func
+from sqlalchemy import cast, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
@@ -60,6 +60,32 @@ async def get_session_messages(
     ]
 
 
+@router.get("/stats")
+async def list_stats(
+    _: str = Depends(_require_admin_key),
+    db: AsyncSession = Depends(get_db),
+):
+    """Агрегация по дате: дата, количество уникальных пользователей, количество сессий (диалогов)."""
+    from sqlalchemy import Date
+    day_col = cast(Message.created_at, Date)
+    subq = (
+        select(Message.user_id, Message.dialog_id, day_col.label("day"))
+        .where(Message.created_at.isnot(None))
+        .group_by(Message.user_id, Message.dialog_id, day_col)
+    ).subquery()
+    q = (
+        select(subq.c.day, func.count(subq.c.user_id).label("sessions"), func.count(func.distinct(subq.c.user_id)).label("unique_users"))
+        .group_by(subq.c.day)
+        .order_by(subq.c.day.desc())
+    )
+    result = await db.execute(q)
+    rows = result.all()
+    return [
+        {"day": r.day.isoformat() if r.day else None, "sessions": r.sessions, "unique_users": r.unique_users}
+        for r in rows
+    ]
+
+
 @router.get("/leads")
 async def list_leads(
     _: str = Depends(_require_admin_key),
@@ -76,6 +102,7 @@ async def list_leads(
             "dialog_id": l.dialog_id,
             "contact_text": l.contact_text,
             "created_at": l.created_at.isoformat() if l.created_at else None,
+            "updated_at": l.updated_at.isoformat() if getattr(l, "updated_at", None) else None,
         }
         for l in leads
     ]
