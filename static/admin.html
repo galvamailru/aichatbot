@@ -99,6 +99,7 @@
       const el = document.getElementById('sessions-list');
       el.innerHTML = 'Загрузка…';
       document.getElementById('session-detail').style.display = 'none';
+      el.style.display = 'block';
       try {
         const r = await fetch('/api/admin/sessions', { headers: headers() });
         if (r.status === 403) { el.innerHTML = '<p class="error">Неверный ключ. Введите ADMIN_KEY.</p>'; return; }

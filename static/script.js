@@ -26,7 +26,8 @@
 
   var isFullLayout = (function () {
     var params = new URLSearchParams(window.location.search);
-    var full = params.get('layout') === 'full';
+    var explicitPopup = params.get('layout') === 'popup';
+    var full = !explicitPopup;
     if (full) {
       document.body.classList.add('layout-full', 'show-chatbot');
     }
@@ -36,7 +37,8 @@
   var layoutSwitch = document.getElementById('layout-switch');
   if (layoutSwitch) {
     layoutSwitch.textContent = isFullLayout ? 'Всплывающее окно' : 'Полноэкранный';
-    layoutSwitch.href = isFullLayout ? (window.location.pathname || '/static/index.html') : (window.location.pathname + '?layout=full');
+    var basePath = window.location.pathname || '/';
+    layoutSwitch.href = isFullLayout ? (basePath + (basePath.indexOf('?') >= 0 ? '&' : '?') + 'layout=popup') : basePath.split('?')[0];
     layoutSwitch.addEventListener('click', function (e) {
       e.preventDefault();
       window.location.href = layoutSwitch.href;
