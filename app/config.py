@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     LLM_URL: str = "https://api.deepseek.com"
     LLM_API_KEY: str = ""
     LLM_MODEL: str = "deepseek-chat"
+    LLM_TEMPERATURE: float = 0.7
 
     PROMPT_FILE_PATH: str = "prompts/system.txt"
     ADMIN_KEY: str = ""

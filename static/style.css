@@ -62,10 +62,10 @@ body.show-chatbot #chatbot-toggler .icon-close { opacity: 1; }
   border-radius: 15px;
   opacity: 0;
   pointer-events: none;
-  transform: scale(0.2);
+  transform: scale(0.95);
   transform-origin: bottom right;
   box-shadow: 0 0 128px 0 rgba(0, 0, 0, 0.1), 0 32px 64px -48px rgba(0, 0, 0, 0.5);
-  transition: all 0.2s ease;
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
 body.show-chatbot .chatbot-popup {
@@ -108,6 +108,11 @@ body.show-chatbot .chatbot-popup {
   font-weight: 600;
   font-size: 1.25rem;
   letter-spacing: 0.02rem;
+  text-decoration: none;
+}
+.header-info .logo-text:hover {
+  color: rgba(255, 255, 255, 0.95);
+  text-decoration: underline;
 }
 
 .chat-header #close-chatbot {

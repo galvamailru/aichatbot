@@ -125,10 +125,28 @@
       }
 
       var streamedText = '';
-      function appendAndFormat(chunk) {
-        streamedText += chunk;
-        botEl.text.innerHTML = formatBold(streamedText);
+      var pendingBuffer = '';
+      var streamEnded = false;
+      var typewriterMs = 18;
+      var typewriterCharsPerTick = 2;
+
+      function appendChunk(chunk) {
+        pendingBuffer += chunk;
       }
+
+      function drainTypewriter() {
+        if (pendingBuffer.length === 0) {
+          if (streamEnded) clearInterval(typewriterInterval);
+          return;
+        }
+        var take = Math.min(typewriterCharsPerTick, pendingBuffer.length);
+        streamedText += pendingBuffer.slice(0, take);
+        pendingBuffer = pendingBuffer.slice(take);
+        botEl.text.innerHTML = formatBold(streamedText);
+        chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
+      }
+
+      var typewriterInterval = setInterval(drainTypewriter, typewriterMs);
 
       const reader = res.body.getReader();
       const dec = new TextDecoder();
@@ -143,15 +161,17 @@
           if (line.startsWith('data: ')) {
             var data = line.slice(6).replace(/\r?\n$/, '');
             if (data.trim() === '[DONE]') continue;
-            appendAndFormat(data);
-            chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
+            appendChunk(data);
           }
         }
       }
+      streamEnded = true;
+      if (pendingBuffer.length === 0) clearInterval(typewriterInterval);
     } catch (err) {
       botEl.wrap.classList.remove('thinking');
       botEl.text.textContent = 'Ошибка: ' + (err.message || 'сеть');
       errorEl.textContent = err.message || 'Ошибка запроса';
+      if (typeof typewriterInterval !== 'undefined') clearInterval(typewriterInterval);
     } finally {
       sendBtn.disabled = false;
       chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
@@ -169,9 +189,10 @@
     }
   });
 
-  const welcome = createMessageElement(
-    'Здравствуйте! Я — умный помощник компании «Клиентариум». Мы создаем ИИ-агентов, которые берут на себя рутину: разгружают поддержку до 60%, прогревают лидов в 2 раза быстрее и автоматизируют маркетинг. Подскажите, в какой сфере работает ваша компания? Это поможет мне сразу привести самые релевантные примеры.',
-    'bot'
-  );
-  chatBody.appendChild(welcome.wrap);
+  var welcomeText = 'Здравствуйте! Я — умный помощник компании «Клиентариум». Мы создаем ИИ-агентов, которые берут на себя рутину: разгружают поддержку до 60%, прогревают лидов в 2 раза быстрее и автоматизируют маркетинг. Подскажите, в какой сфере работает ваша компания? Это поможет мне сразу привести самые релевантные примеры.';
+  var welcomeDelayMs = 2500;
+  setTimeout(function () {
+    var welcome = createMessageElement(welcomeText, 'bot');
+    chatBody.appendChild(welcome.wrap);
+  }, welcomeDelayMs);
 })();

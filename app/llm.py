@@ -37,6 +37,7 @@ async def stream_chat(
         "model": settings.LLM_MODEL,
         "messages": [{"role": "system", "content": system_prompt}, *messages],
         "stream": True,
+        "temperature": settings.LLM_TEMPERATURE,
     }
     async with httpx.AsyncClient(timeout=60.0) as client:
         async with client.stream("POST", url, json=body, headers=headers) as response:
