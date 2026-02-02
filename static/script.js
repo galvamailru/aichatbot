@@ -102,9 +102,6 @@
     if (text.length > MAX_MESSAGE_LENGTH) {
       messageInput.value = '';
       errorEl.textContent = '';
-      const userEl = createMessageElement(text, 'user');
-      chatBody.appendChild(userEl.wrap);
-      chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
       const botEl = createMessageElement(MAX_LENGTH_BOT_REPLY, 'bot');
       chatBody.appendChild(botEl.wrap);
       chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
