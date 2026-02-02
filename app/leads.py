@@ -72,12 +72,25 @@ def _merge_contacts(existing_text: str | None, new_parts: list[str]) -> str:
 
 
 def _normalize_contact(s: str) -> str:
-    """Нормализация для сравнения (убираем пробелы/дефисы в цифрах и нижний регистр для email)."""
+    """
+    Нормализация для сравнения: только цифры и +; для российских номеров — каноническая форма 8 + 10 цифр,
+    чтобы «8 927 678 34 54» и «927 678 34 54» считались одним контактом.
+    """
     s = s.strip().lower()
     digits = "".join(c for c in s if c.isdigit() or c == "+")
-    if digits:
+    if not digits:
+        return s
+    # Российский номер: +7 или 8 в начале — приводим к 8XXXXXXXXXX (11 цифр)
+    if digits.startswith("+7"):
+        digits = "8" + digits[2:]
+    elif digits.startswith("7") and len(digits) == 11:
+        digits = "8" + digits[1:]
+    if digits.startswith("8") and len(digits) == 11:
         return digits
-    return s
+    # 10 цифр, начинается с 9 (типичный мобильный без ведущей 8) — считаем тем же номером, что и 8 + эти цифры
+    if len(digits) == 10 and digits[0] == "9":
+        return "8" + digits
+    return digits
 
 
 async def save_lead_if_contact(
