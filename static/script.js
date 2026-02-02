@@ -126,6 +126,13 @@
     sendBtn.disabled = true;
 
     try {
+      if (text.length > MAX_MESSAGE_LENGTH) {
+        botEl.wrap.classList.remove('thinking');
+        botEl.text.innerHTML = '';
+        botEl.text.textContent = MAX_LENGTH_BOT_REPLY;
+        sendBtn.disabled = false;
+        return;
+      }
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
