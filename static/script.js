@@ -53,6 +53,14 @@
       .replace(/"/g, '&quot;');
   }
 
+  function toDisplayableError(detail, fallback) {
+    if (detail == null) return fallback || 'Ошибка запроса';
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail) && detail.length > 0 && detail[0].msg) return detail[0].msg;
+    if (typeof detail === 'object' && detail.msg) return detail.msg;
+    return fallback || 'Ошибка запроса';
+  }
+
   function formatBold(text) {
     if (!text) return '';
     var escaped = escapeHtml(text);
@@ -134,9 +142,8 @@
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: res.statusText }));
-        var errMsg = res.status === 422 ? MAX_LENGTH_MSG : (err.detail || res.statusText);
-        if (typeof errMsg !== 'string' && Array.isArray(errMsg)) errMsg = errMsg[0] && errMsg[0].msg ? errMsg[0].msg : MAX_LENGTH_MSG;
-        botEl.text.textContent = res.status === 422 ? '' : 'Ошибка: ' + errMsg;
+        var errMsg = res.status === 422 ? MAX_LENGTH_BOT_REPLY : toDisplayableError(err.detail);
+        botEl.text.textContent = errMsg;
         errorEl.textContent = res.status === 422 ? MAX_LENGTH_MSG : errMsg;
         sendBtn.disabled = false;
         return;
