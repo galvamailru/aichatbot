@@ -82,10 +82,17 @@
     }
   }
 
+  var MAX_MESSAGE_LENGTH = 1000;
+  var MAX_LENGTH_MSG = 'Размер сообщения ограничен 1000 символами.';
+
   async function handleSend(e) {
     e.preventDefault();
     const text = messageInput.value.trim();
     if (!text) return;
+    if (text.length > MAX_MESSAGE_LENGTH) {
+      errorEl.textContent = MAX_LENGTH_MSG;
+      return;
+    }
     messageInput.value = '';
     errorEl.textContent = '';
 
@@ -118,8 +125,10 @@
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: res.statusText }));
-        botEl.text.textContent = 'Ошибка: ' + (err.detail || res.statusText);
-        errorEl.textContent = err.detail || res.statusText;
+        var errMsg = res.status === 422 ? MAX_LENGTH_MSG : (err.detail || res.statusText);
+        if (typeof errMsg !== 'string' && Array.isArray(errMsg)) errMsg = errMsg[0] && errMsg[0].msg ? errMsg[0].msg : MAX_LENGTH_MSG;
+        botEl.text.textContent = res.status === 422 ? '' : 'Ошибка: ' + errMsg;
+        errorEl.textContent = res.status === 422 ? MAX_LENGTH_MSG : errMsg;
         sendBtn.disabled = false;
         return;
       }
