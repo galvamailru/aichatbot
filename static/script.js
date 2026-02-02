@@ -198,6 +198,14 @@
     }
   });
 
+  messageInput.addEventListener('input', function () {
+    if (messageInput.value.length >= MAX_MESSAGE_LENGTH) {
+      errorEl.textContent = MAX_LENGTH_MSG;
+    } else if (errorEl.textContent === MAX_LENGTH_MSG) {
+      errorEl.textContent = '';
+    }
+  });
+
   var welcomeText = 'Здравствуйте! Я — умный помощник компании «Клиентариум». Мы создаем ИИ-агентов, которые берут на себя рутину: разгружают поддержку до 60%, прогревают лидов в 2 раза быстрее и автоматизируют маркетинг. Подскажите, в какой сфере работает ваша компания? Это поможет мне сразу привести самые релевантные примеры.';
   var welcomeDelayMs = 2500;
   setTimeout(function () {
