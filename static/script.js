@@ -90,19 +90,24 @@
     e.preventDefault();
     const text = messageInput.value.trim();
     if (!text) return;
-    messageInput.value = '';
-    errorEl.textContent = '';
-
-    const userEl = createMessageElement(text, 'user');
-    chatBody.appendChild(userEl.wrap);
-    chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
 
     if (text.length > MAX_MESSAGE_LENGTH) {
+      messageInput.value = '';
+      errorEl.textContent = '';
+      const userEl = createMessageElement(text, 'user');
+      chatBody.appendChild(userEl.wrap);
+      chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
       const botEl = createMessageElement(MAX_LENGTH_BOT_REPLY, 'bot');
       chatBody.appendChild(botEl.wrap);
       chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
       return;
     }
+
+    messageInput.value = '';
+    errorEl.textContent = '';
+    const userEl = createMessageElement(text, 'user');
+    chatBody.appendChild(userEl.wrap);
+    chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
 
     const botEl = createMessageElement('', 'bot');
     botEl.wrap.classList.add('thinking');
