@@ -84,21 +84,25 @@
 
   var MAX_MESSAGE_LENGTH = 1000;
   var MAX_LENGTH_MSG = 'Размер сообщения ограничен 1000 символами.';
+  var MAX_LENGTH_BOT_REPLY = 'Сообщение превышает допустимый размер (1000 символов). Сократите текст и отправьте снова.';
 
   async function handleSend(e) {
     e.preventDefault();
     const text = messageInput.value.trim();
     if (!text) return;
-    if (text.length > MAX_MESSAGE_LENGTH) {
-      errorEl.textContent = MAX_LENGTH_MSG;
-      return;
-    }
     messageInput.value = '';
     errorEl.textContent = '';
 
     const userEl = createMessageElement(text, 'user');
     chatBody.appendChild(userEl.wrap);
     chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
+
+    if (text.length > MAX_MESSAGE_LENGTH) {
+      const botEl = createMessageElement(MAX_LENGTH_BOT_REPLY, 'bot');
+      chatBody.appendChild(botEl.wrap);
+      chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
+      return;
+    }
 
     const botEl = createMessageElement('', 'bot');
     botEl.wrap.classList.add('thinking');
